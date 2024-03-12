@@ -208,6 +208,11 @@ def parse_eval_args() -> argparse.Namespace:
         action="store_true",
         help="Sets trust_remote_code to True to execute code to create HF Datasets from the Hub",
     )
+    parser.add_argument(
+        "--rag_args",
+        default=None,
+        help="Comma separated string arguments for model, e.g. `pretrained=EleutherAI/pythia-160m,dtype=float32`",
+    )
 
     return parser.parse_args()
 
@@ -335,6 +340,7 @@ def cli_evaluate(args: Union[argparse.Namespace, None] = None) -> None:
         random_seed=args.seed[0],
         numpy_random_seed=args.seed[1],
         torch_random_seed=args.seed[2],
+        rag_args=args.rag_args,
         **request_caching_args,
     )
 

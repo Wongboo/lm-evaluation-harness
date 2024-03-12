@@ -370,6 +370,7 @@ class Task(abc.ABC):
         world_size=None,
         cache_requests=False,
         rewrite_requests_cache=False,
+        rag=None,
     ) -> None:
         """Build a set of Instances for a task, and store them in task.instances"""
 
@@ -419,6 +420,13 @@ class Task(abc.ABC):
                 doc,
                 0 if self.config.num_fewshot is None else self.config.num_fewshot,
             )
+
+            if rag is not None:
+                zeroshot_ctx = self.fewshot_context(doc, 0)
+                knowledge_ids = rag.search([zeroshot_ctx], hits=rag.num_refs)[1]
+                knowledges = [rag.ref_database[knowledge_id]['segment'] for knowledge_id in knowledge_ids]
+                knowledges = '\n'.join(knowledges[0])
+                fewshot_ctx = f"Knowledges:\n{knowledges}\n\n{fewshot_ctx}"
 
             # TODO: we should override self.config.repeats if doing greedy gen so users don't waste time+compute
             inst = self.construct_requests(

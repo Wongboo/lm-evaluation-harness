@@ -10,6 +10,7 @@ import torch
 import lm_eval.api.metrics
 import lm_eval.api.registry
 import lm_eval.models
+from lm_eval.api.retriever import Retriever
 from lm_eval.caching.cache import delete_cache
 from lm_eval.evaluator_utils import (
     consolidate_results,
@@ -54,6 +55,7 @@ def simple_evaluate(
     random_seed: int = 0,
     numpy_random_seed: int = 1234,
     torch_random_seed: int = 1234,
+    rag_args: Optional[str] = None,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -226,6 +228,12 @@ def simple_evaluate(
 
     if check_integrity:
         run_task_tests(task_list=tasks)
+        
+    if rag_args is None:
+        rag = None
+    else:
+        args = simple_parse_args_string(rag_args)
+        rag = Retriever(**args)
 
     results = evaluate(
         lm=lm,
@@ -237,6 +245,7 @@ def simple_evaluate(
         write_out=write_out,
         log_samples=log_samples,
         verbosity=verbosity,
+        rag=rag,
     )
 
     if lm.rank == 0:
@@ -279,6 +288,7 @@ def evaluate(
     write_out: bool = False,
     log_samples: bool = True,
     verbosity: str = "INFO",
+    rag: Optional[Retriever] = None,
 ):
     """Instantiate and evaluate a model on a list of tasks.
 
@@ -323,6 +333,7 @@ def evaluate(
             world_size=lm.world_size,
             cache_requests=cache_requests,
             rewrite_requests_cache=rewrite_requests_cache,
+            rag=rag,
         )
         eval_logger.debug(
             f"Task: {task_output.task_name}; number of requests on this rank: {len(task.instances)}"
